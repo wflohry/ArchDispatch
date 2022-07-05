@@ -34,6 +34,10 @@ int main(int argc, char **argv)
         std::cerr << dispatcher.get_error() << std::endl;
         return 1;
     }
+    else
+    {
+        std::cout << "Successfully loaded " << dispatcher.get_lib_name() << std::endl;
+    }
 
     typedef float (*RunLoop)(const float *, uint64_t);
     RunLoop run_loop = dispatcher.load<RunLoop>("get_result");

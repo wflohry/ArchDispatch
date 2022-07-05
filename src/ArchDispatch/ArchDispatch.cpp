@@ -1,5 +1,6 @@
 #include "ArchDispatch.h"
 #include <filesystem>
+#include <simdpp/dispatch/arch.h>
 
 namespace
 {
@@ -19,23 +20,50 @@ constexpr int get_mask()
     return out;
 }
 
-constexpr int arch_mask = get_mask();
+ArchDispatch::Architecture apply_mask(simdpp::Arch arch)
+{
+    constexpr int arch_mask = get_mask();
+    return static_cast<ArchDispatch::Architecture>(static_cast<int>(arch) & arch_mask);
+}
 
 }        // namespace
 
-#if __unix__
-#	include <simdpp/dispatch/get_arch_linux_cpuinfo.h>
+#if defined(__unix__)
 
 namespace
 {
 static const char *ext = ".so";
 }        // namespace
 
+#	if ((__GNUC__ > 4) || (__GNUC__ == 4 && __GNUC_MINOR__ >= 8)) && (__i386__ || __amd64__)
+
+#		include <simdpp/dispatch/get_arch_gcc_builtin_cpu_supports.h>
+
 ArchDispatch::Architecture ArchDispatch::detect_architecture()
 {
-    const auto detected = simdpp::get_arch_linux_cpuinfo();
+    return apply_mask(simdpp::get_arch_gcc_builtin_cpu_supports());
+}
 
-    return static_cast<Architecture>(static_cast<int>(detected) & arch_mask);
+#	else        // clang
+
+#		include <simdpp/dispatch/get_arch_linux_cpuinfo.h>
+ArchDispatch::Architecture ArchDispatch::detect_architecture()
+{
+    return apply_mask(simdpp::get_arch_linux_cpuinfo());
+}
+#	endif        // gnu / clang
+
+#elif defined(_MSC_VER) || defined(__clang__) || defined(__INTEL_COMPILER)
+
+namespace
+{
+static const char *ext = ".dll";
+}
+
+#	include <simdpp/dispatch/get_arch_raw_cpuid.h>
+ArchDispatch::Architecture ArchDispatch::detect_architecture()
+{
+    return apply_mask(simdpp::get_arch_raw_cpuid());
 }
 #endif
 
