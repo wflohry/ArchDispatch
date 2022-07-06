@@ -24,7 +24,6 @@ Architecture detect_architecture();
 
 #ifdef __unix__
 #	include <dlfcn.h>
-#	include <string>
 #	include <memory>
 
 namespace ArchDispatch
@@ -94,7 +93,66 @@ class Dispatcher
 };
 
 }        // namespace ArchDispatch
+#elif defined(_MSC_VER)
+
+#include <windows.h>
+#include <type_traits>
+
+namespace ArchDispatch
+{
+
+    class Dispatcher
+    {
+    public:
+        Dispatcher(const std::string& lib_base_name)
+        {
+            name = detect_supported_lib(lib_base_name);
+            if (!name.empty())
+            {
+                handle = LoadLibrary(name.c_str()); // std::unique_ptr<void, Deleter>(dlopen(name.c_str(), RTLD_LAZY));
+            }
+        }
+
+        std::string get_lib_name() const
+        {
+            return this->name;
+        }
+
+        operator bool() const
+        {
+            return !!handle;
+        }
+
+        template <typename Func>
+        Func load(const std::string& function_name)
+        {
+            if (handle)
+            {
+                if (Func out = reinterpret_cast<Func>(GetProcAddress(handle, function_name.c_str())))
+                {
+                    return out;
+                }
+            }
+            return nullptr;
+        }
+
+        static std::string get_error()
+        {
+            return std::string("Unknown error occurred");
+        }
+
+        ~Dispatcher()
+        {
+        }
+
+    private:
+        std::string name;
+        HINSTANCE handle = nullptr;
+    };
+}
 #endif
+
+
 
 namespace ArchDispatch
 {

@@ -1,11 +1,12 @@
 #include <cstdint>
+#include <cstring>
 
-#if defined(__GNUC__) || defined(__clang__)
-#	define VISIBILITY_HIDDEN __attribute__((visibility("hidden")))
-#	define VISIBILITY_VISIBLE __attribute__((visibility("default")))
-#elif defined(_MSC_VER)
+#if defined(_MSC_VER)
 #	define VISIBILITY_HIDDEN
 #	define VISIBILITY_VISIBLE __declspec(dllexport)
+#elif defined(__GNUC__) || defined(__clang__)
+#	define VISIBILITY_HIDDEN __attribute__((visibility("hidden")))
+#	define VISIBILITY_VISIBLE __attribute__((visibility("default")))
 #endif
 
 extern "C"

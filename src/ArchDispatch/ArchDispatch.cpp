@@ -1,6 +1,7 @@
 #include "ArchDispatch.h"
 #include <filesystem>
 #include <simdpp/dispatch/arch.h>
+#include <array>
 
 namespace
 {
@@ -60,6 +61,7 @@ namespace
 static const char *ext = ".dll";
 }
 
+#   define LIBSIMDPP_SIMD_H
 #	include <simdpp/dispatch/get_arch_raw_cpuid.h>
 ArchDispatch::Architecture ArchDispatch::detect_architecture()
 {
@@ -79,14 +81,14 @@ std::string ArchDispatch::detect_supported_lib(const std::string &lib_base_name)
         std::string name = std::string(lib_base_name).append(get_name(arch)).append(ext);
         if (std::filesystem::exists(name))
         {
-            return std::filesystem::absolute(name);
+            return std::filesystem::absolute(name).generic_string();
         }
     }
 
     const auto without = std::string(lib_base_name).append(ext);
     if (std::filesystem::exists(without))
     {
-        return std::filesystem::absolute(without);
+        return std::filesystem::absolute(without).generic_string();
     }
 
     return "";

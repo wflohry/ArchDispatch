@@ -72,6 +72,9 @@ int example_2(const std::string &libname, int argc, char **argv)
             return code;
         }
     }
+
+    std::cout << "Example 2: Success" << std::endl;
+
     return 0;
 }
 
