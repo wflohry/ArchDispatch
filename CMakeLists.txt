@@ -4,36 +4,13 @@ project(ArchDispatch)
 set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 set(CMAKE_CXX_STANDARD 17)
 
-function(add_flag flag)
-    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${flag}")
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${flag}")
-endfunction()
-
 set(TargetArch "sse4_1" CACHE STRING "Target archiecture")
 set_property(CACHE TargetArch PROPERTY STRINGS sse2 sse4_1 avx avx2)
 string(TOUPPER ${TargetArch} TargetArchUpper)
 
-function(set_arch linux_arch windows_arch)
-    if (CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
-        add_flag(linux_arch)
-    elseif (CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
-        add_flag(linux_arch)
-    elseif (CMAKE_CXX_COMPILER_ID STREQUAL "MSVC")
-        add_flag(windows_arch)
-    else()
-        message(FATAL_ERROR "Not written for compiler ${CMAKE_CXX_COMPILER_ID}")
-    endif()
-endfunction()
+include("cmake/SetArch.cmake")
+set_arch("${TargetArch}")
 
-if (${TargetArch} STREQUAL "sse2")
-    set_arch("-msse2" "/arch:SSE2")
-elseif(${TargetArch} STREQUAL "sse4_1")
-    set_arch("-msse4.1" "/arch:SSE2") # note -- no sse4.2
-elseif(${TargetArch} STREQUAL "avx")
-    set_arch("-mavx" "/arch:AVX")
-elseif(${TargetArch} STREQUAL "avx2")
-    set_arch("-mavx2" "/arch:AVX2")
-endif()
 
 # libsimdpp
 find_path(LIBSIMDPP_PATH NAMES simdpp/simd.h HINTS "${CMAKE_CURRENT_SOURCE_DIR}/submodules/libsimdpp")

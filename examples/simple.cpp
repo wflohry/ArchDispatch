@@ -60,9 +60,10 @@ int example_1(const std::string &libname)
 
 int example_2(const std::string &libname, int argc, char **argv)
 {
+    using namespace ArchDispatch;
     typedef int (*Main_t)(int, char **);
-    const auto result_1 = ArchDispatch::run_main(libname, "simd_main", argc, argv);
-    const auto result_2 = ArchDispatch::run_func<Main_t>(libname, "simd_main", argc, argv);
+    const auto result_1 = ArchDispatch::run_main(libname, "simd_main", &format_name_suffix, nullptr, argc, argv);
+    const auto result_2 = ArchDispatch::run_func<Main_t>(libname, "simd_main", &format_name_suffix, nullptr, argc, argv);
 
     for (auto &&[code, err] : {result_1, result_2})
     {

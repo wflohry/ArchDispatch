@@ -1,7 +1,7 @@
 #include "ArchDispatch.h"
+#include <array>
 #include <filesystem>
 #include <simdpp/dispatch/arch.h>
-#include <array>
 
 namespace
 {
@@ -61,7 +61,7 @@ namespace
 static const char *ext = ".dll";
 }
 
-#   define LIBSIMDPP_SIMD_H
+#	define LIBSIMDPP_SIMD_H
 #	include <simdpp/dispatch/get_arch_raw_cpuid.h>
 ArchDispatch::Architecture ArchDispatch::detect_architecture()
 {
@@ -69,7 +69,7 @@ ArchDispatch::Architecture ArchDispatch::detect_architecture()
 }
 #endif
 
-std::string ArchDispatch::detect_supported_lib(const std::string &lib_base_name)
+std::string ArchDispatch::detect_supported_lib(const std::string &lib_base_name, format_name_t format_name, void *user_data)
 {
     const auto detected = detect_architecture();
     for (auto &&arch : supported)
@@ -78,7 +78,7 @@ std::string ArchDispatch::detect_supported_lib(const std::string &lib_base_name)
         {
             continue;
         }
-        std::string name = std::string(lib_base_name).append(get_name(arch)).append(ext);
+        const auto name = format_name(lib_base_name, arch, user_data);
         if (std::filesystem::exists(name))
         {
             return std::filesystem::absolute(name).generic_string();
@@ -110,4 +110,16 @@ std::string ArchDispatch::get_name(Architecture arch)
             return "SSE2";
     }
     return "";
+}
+
+std::string ArchDispatch::format_name_folder(const std::string &lib_base_name, Architecture arch, void *user_data)
+{
+    (void) user_data;
+    return get_name(arch).append("/").append(lib_base_name).append(ext);
+}
+
+std::string ArchDispatch::format_name_suffix(const std::string &lib_base_name, Architecture arch, void *user_data)
+{
+    (void) user_data;
+    return std::string(lib_base_name).append(get_name(arch)).append(ext);
 }
