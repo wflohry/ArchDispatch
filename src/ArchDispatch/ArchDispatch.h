@@ -38,7 +38,7 @@ class Dispatcher
         name = detect_supported_lib(lib_base_name);
         if (!name.empty())
         {
-            handle = std::unique_ptr<void, void (*)(void *)>(dlopen(name.c_str(), RTLD_LAZY), &close);
+            handle = std::unique_ptr<void, Deleter>(dlopen(name.c_str(), RTLD_LAZY));
         }
     }
 
@@ -55,15 +55,14 @@ class Dispatcher
     template <typename Func>
     Func load(const std::string &function_name)
     {
-        if (!handle)
+        if (handle)
         {
-            throw std::runtime_error("No active library");
+            if (Func out = reinterpret_cast<Func>(dlsym(handle.get(), function_name.data())))
+            {
+                return out;
+            }
         }
-        if (Func out = reinterpret_cast<Func>(dlsym(handle.get(), function_name.data())))
-        {
-            return out;
-        }
-        throw std::runtime_error(get_error());
+        return nullptr;
     }
 
     static std::string get_error()
@@ -80,17 +79,70 @@ class Dispatcher
     }
 
   private:
-    static void close(void *ptr)
+    struct Deleter
     {
-        if (!!ptr)
+        void operator()(void *ptr)
         {
-            dlclose(ptr);
+            if (!!ptr)
+            {
+                dlclose(ptr);
+            }
         }
-    }
-    std::string                             name;
-    std::unique_ptr<void, void (*)(void *)> handle = {nullptr, &close};
+    };
+    std::string                    name;
+    std::unique_ptr<void, Deleter> handle;
 };
+
 }        // namespace ArchDispatch
 #endif
+
+namespace ArchDispatch
+{
+
+/**
+ * @brief run_func Load the library, run a single function, and then close the library
+ * @param lib_base_name Library name to be passed to arch dispatch.
+ * @param function_name unction name within library
+ * @param args Args to be passed to function
+ * @return Pair containing output or error string, if it exists
+ */
+template <typename Func, typename... Args>
+inline auto run_func(const std::string &lib_base_name, const std::string &function_name, Args &&...args) -> std::pair<std::invoke_result_t<Func, Args...>, std::string>
+{
+    using Ret       = std::invoke_result_t<Func, Args...>;
+    auto dispatcher = ArchDispatch::Dispatcher(lib_base_name);
+    if (dispatcher)
+    {
+        if (auto func = dispatcher.load<Func>(function_name))
+        {
+            return {func(std::forward<Args>(args)...), ""};
+        }
+    }
+
+    if constexpr (std::is_default_constructible_v<Ret>)
+    {
+        return {Ret{}, dispatcher.get_error()};
+    }
+    else
+    {
+        throw std::runtime_error(dispatcher.get_error());
+    }
+}
+
+/**
+ * @brief run_main Run the main function from a library for whole-program dynamic dispatch
+ * @param lib_base_name Library name to be passed to arch dispatch.
+ * @param main_function_name Function name within library
+ * @param argc Argument count from main
+ * @param argv Arguments from main
+ * @return Pair containing error code from "main" or error string, if it exists
+ */
+inline std::pair<int, std::string> run_main(const std::string &lib_base_name, const std::string &main_function_name, int argc, char **argv)
+{
+    typedef int (*main_func_t)(int argc, char **argv);
+    return run_func<main_func_t>(lib_base_name, main_function_name, argc, argv);
+}
+
+}        // namespace ArchDispatch
 
 #endif

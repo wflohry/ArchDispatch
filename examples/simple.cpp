@@ -16,16 +16,9 @@ std::pair<std::vector<float>, float> get_value(std::size_t N)
     }
     return {values, result};
 }
-}        // namespace
 
-int main(int argc, char **argv)
+int example_1(const std::string &libname)
 {
-#ifdef __unix__
-    const std::string libname = "libfor_loop";
-#else
-    const std::string libname = "for_loop";
-#endif
-
     ArchDispatch::Dispatcher dispatcher(libname);
 
     if (!dispatcher)
@@ -62,6 +55,38 @@ int main(int argc, char **argv)
         std::cerr << "Unable to load function" << std::endl;
         return 1;
     }
+    return 0;
+}
+
+int example_2(const std::string &libname, int argc, char **argv)
+{
+    typedef int (*Main_t)(int, char **);
+    const auto result_1 = ArchDispatch::run_main(libname, "simd_main", argc, argv);
+    const auto result_2 = ArchDispatch::run_func<Main_t>(libname, "simd_main", argc, argv);
+
+    for (auto &&[code, err] : {result_1, result_2})
+    {
+        if (!err.empty() || 0 != code)
+        {
+            std::cerr << "Received error: " << err << std::endl;
+            return code;
+        }
+    }
+    return 0;
+}
+
+}        // namespace
+
+int main(int argc, char **argv)
+{
+#ifdef __unix__
+    const std::string libname = "libfor_loop";
+#else
+    const std::string libname = "for_loop";
+#endif
+
+    example_1(libname);
+    example_2(libname, argc, argv);
 
     return 0;
 }

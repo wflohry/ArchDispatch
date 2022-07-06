@@ -19,4 +19,9 @@ extern "C"
         }
         return out;
     }
+
+    VISIBILITY_VISIBLE int simd_main(int argc, char **argv)
+    {
+        return 0;
+    }
 }
