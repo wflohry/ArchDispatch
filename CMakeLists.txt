@@ -18,7 +18,10 @@ add_library(libsimdpp INTERFACE)
 target_include_directories(libsimdpp INTERFACE ${LIBSIMDPP_PATH})
 add_library(libsimdpp::libsimdpp  ALIAS libsimdpp )
 
-add_library(ArchDispatch src/ArchDispatch/ArchDispatch.cpp src/ArchDispatch/ArchDispatch.h)
+set(ARCH_SRC_DIR "src/ArchDispatch/")
+add_library(ArchDispatch ${ARCH_SRC_DIR}/ArchDispatch.cpp
+                    ${ARCH_SRC_DIR}/ArchDispatch.h
+                )
 target_include_directories(ArchDispatch PUBLIC src)
 target_link_libraries(ArchDispatch PRIVATE libsimdpp)
 add_library(ArchDispatch::ArchDispatch ALIAS ArchDispatch)
