@@ -109,9 +109,9 @@ namespace ArchDispatch
 class Dispatcher
 {
   public:
-    Dispatcher(const std::string &lib_base_name)
+    Dispatcher(const std::string &lib_base_name, format_name_t format_name = &format_name_suffix, void *user_data = nullptr)
     {
-        name = detect_supported_lib(lib_base_name);
+        name = detect_supported_lib(lib_base_name, format_name, user_data);
         if (!name.empty())
         {
             handle = LoadLibrary(name.c_str());        // std::unique_ptr<void, Deleter>(dlopen(name.c_str(), RTLD_LAZY));
