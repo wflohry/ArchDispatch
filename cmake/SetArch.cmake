@@ -17,7 +17,9 @@ function(set_arch_impl linux_arch windows_arch)
 endfunction()
 
 function(set_arch arch_option)
-    if (${arch_option} STREQUAL "sse2")
+    if (EMSCRIPTEN)
+        set_arch_impl("-msimd128" "")
+    elseif (${arch_option} STREQUAL "sse2")
         set_arch_impl("-msse2" "/arch:SSE2")
     elseif(${arch_option} STREQUAL "sse4_1")
         set_arch_impl("-msse4.1" "/arch:SSE2") # note -- no sse4.2
