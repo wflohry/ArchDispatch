@@ -38,6 +38,7 @@ class Dispatcher
 {
   public:
     Dispatcher(const std::string &lib_base_name, format_name_t format_name = &format_name_suffix, void *user_data = nullptr)
+        : lib_base_name(lib_base_name)
     {
         name = detect_supported_lib(lib_base_name, format_name, user_data);
         if (!name.empty())
@@ -69,9 +70,11 @@ class Dispatcher
         return nullptr;
     }
 
-    static std::string get_error()
+    std::string get_error()
     {
-        if (const char *error = dlerror())
+        if (name.empty()) {
+            return std::string("Unable to find library: ").append(lib_base_name);
+        } else if (const char *error = dlerror())
         {
             return std::string(error);
         }
@@ -93,6 +96,7 @@ class Dispatcher
             }
         }
     };
+    std::string                    lib_base_name;
     std::string                    name;
     std::unique_ptr<void, Deleter> handle;
 };

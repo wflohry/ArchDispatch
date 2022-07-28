@@ -5,11 +5,12 @@
 
 namespace
 {
-constexpr std::array<ArchDispatch::Architecture, 4> supported = {
+constexpr std::array<ArchDispatch::Architecture, 5> supported = {
     ArchDispatch::Architecture::AVX2,
     ArchDispatch::Architecture::AVX,
     ArchDispatch::Architecture::SSE4_1,
-    ArchDispatch::Architecture::SSE2};
+    ArchDispatch::Architecture::SSE2,
+    ArchDispatch::Architecture::NONE_NULL};
 
 constexpr int get_mask()
 {
@@ -74,24 +75,19 @@ std::string ArchDispatch::detect_supported_lib(const std::string &lib_base_name,
     const auto detected = detect_architecture();
     for (auto &&arch : supported)
     {
-        if (!(static_cast<int>(detected) & static_cast<int>(arch)))
+        if (arch != ArchDispatch::Architecture::NONE_NULL && !(static_cast<int>(detected) & static_cast<int>(arch)))
         {
             continue;
         }
         const auto name = format_name(lib_base_name, arch, user_data);
-        if (auto filename = std::filesystem::absolute(name); std::filesystem::exists(filename))
+        const auto filename = std::filesystem::absolute(name);
+        if (std::filesystem::exists(filename))
         {
 #if defined(_MSC_VER)
             std::filesystem::current_path(filename.parent_path());
 #endif
             return filename.generic_string();
         }
-    }
-
-    const auto without = std::string(lib_base_name).append(ext);
-    if (std::filesystem::exists(without))
-    {
-        return std::filesystem::absolute(without).generic_string();
     }
 
     return "";
@@ -112,13 +108,17 @@ std::string ArchDispatch::get_name(Architecture arch)
         case Architecture::SSE2:
             return "SSE2";
     }
-    return "";
+    return ".";
 }
 
 std::string ArchDispatch::format_name_folder(const std::string &lib_base_name, Architecture arch, void *user_data)
 {
     (void) user_data;
-    return get_name(arch).append("/").append(lib_base_name).append(ext);
+    const auto relative_path = std::string(lib_base_name).append(ext);
+    if (arch == ArchDispatch::Architecture::NONE_NULL){
+        return relative_path;
+    }
+    return get_name(arch).append("/").append(relative_path);
 }
 
 std::string ArchDispatch::format_name_suffix(const std::string &lib_base_name, Architecture arch, void *user_data)
