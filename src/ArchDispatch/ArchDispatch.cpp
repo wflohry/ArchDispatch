@@ -83,9 +83,6 @@ std::string ArchDispatch::detect_supported_lib(const std::string &lib_base_name,
         const auto filename = std::filesystem::absolute(name);
         if (std::filesystem::exists(filename))
         {
-#if defined(_MSC_VER)
-            std::filesystem::current_path(filename.parent_path());
-#endif
             return filename.generic_string();
         }
     }

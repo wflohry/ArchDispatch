@@ -3,6 +3,7 @@
 
 #include <stdexcept>
 #include <string>
+#include <filesystem>
 
 namespace ArchDispatch
 {
@@ -43,7 +44,10 @@ class Dispatcher
         name = detect_supported_lib(lib_base_name, format_name, user_data);
         if (!name.empty())
         {
+            const auto cwd = std::filesystem::current_path();
+            std::filesystem::current_path(std::filesystem::absolute(name).parent_path());
             handle = std::unique_ptr<void, Deleter>(dlopen(name.c_str(), RTLD_LAZY));
+            std::filesystem::current_path(cwd);
         }
     }
 
@@ -118,7 +122,10 @@ class Dispatcher
         name = detect_supported_lib(lib_base_name, format_name, user_data);
         if (!name.empty())
         {
+            const auto cwd = std::filesystem::current_path();
+            std::filesystem::current_path(std::filesystem::absolute(name).parent_path());
             handle = LoadLibrary(name.c_str());        // std::unique_ptr<void, Deleter>(dlopen(name.c_str(), RTLD_LAZY));
+            std::filesystem::current_path(cwd);
         }
     }
 
