@@ -47,6 +47,9 @@ class Dispatcher
             const auto cwd = std::filesystem::current_path();
             std::filesystem::current_path(std::filesystem::absolute(name).parent_path());
             handle = std::unique_ptr<void, Deleter>(dlopen(name.c_str(), RTLD_LAZY));
+            if (!handle)[[unlikely]]{
+                error = dlerror();
+            }
             std::filesystem::current_path(cwd);
         }
     }
@@ -76,7 +79,9 @@ class Dispatcher
 
     std::string get_error()
     {
-        if (name.empty()) {
+        if (!error.empty()){
+            return error;
+        } else if (name.empty()) {
             return std::string("Unable to find library: ").append(lib_base_name);
         } else if (const char *error = dlerror())
         {
@@ -103,6 +108,7 @@ class Dispatcher
     std::string                    lib_base_name;
     std::string                    name;
     std::unique_ptr<void, Deleter> handle;
+    std::string                    error;
 };
 
 }        // namespace ArchDispatch
